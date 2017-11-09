@@ -79,10 +79,11 @@ def add_round(user_id):
     except:
         print("Error getting round info: {}".format(traceback.print_exc()))
         return "Error getting round info \n"
-
+    active = sqldb.get_active_rounds('golfer', user_id)
+    print("active: {}".format(active))
     if not validate_golfer(user_id):
         return 'golfer not registered'
-    elif sqldb.get_active_rounds('golfer', user_id):
+    elif active:
         print('Golfer already active in a round. Please end before starting a new round')
         return 'golfer already active'
     else:
@@ -118,6 +119,19 @@ def end_round(user_id):
         print("Error starting new round: {}".format(traceback.print_exc()))
         return "Error starting new round \n"
 
+# Endpoint to add tee shot to a round. Only first hole is supported
+@app.route("/user/<user_id>/tee_shot", methods=['POST'])
+def tee_shot(user_id):
+    print('Adding tee shot to round for {}'.format(user_id))
+    try:
+        data = json.loads(request.get_json())
+        shot = data.get("shot_location", "")
+        sqldb.add_tee_shot(user_id, shot)
+    except:
+        print("Error getting round info: {}".format(traceback.print_exc()))
+        return "Error getting round info \n"
+    return "Added tee shot for {}".format(user_id)
+        
 
 # Course Specific Endpoints
 
@@ -166,6 +180,14 @@ def get_course_avg_round(course_name):
     # get all completed rounds for the course
     #sqldb.
     return "hold"
+
+# Get all drives from a course. only supports 1st hole
+@app.route("/course/<course_id>/tee_shots", methods=['GET'])
+def get_course_tee_shots(course_id):
+    # get all completed rounds for the course
+    tee_shots = sqldb.get_tee_shots(course_id)
+    print ("All tee shots for {}: {}".format(course_id, tee_shots))
+    return "got the tee shots"
 
 def _check_tee_time(course_name, tee_time):
     '''Internal method to handle open_tee_times flask response obj'''

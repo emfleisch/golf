@@ -1,14 +1,22 @@
-create table courses (
+create table courses(
+    course_id   integer primary key,
     name        text,
     description text,
     avg_round_time integer default 0
 );
 
-create table tee_times (
+create table holes(
+    number      integer primary key,
+    name        text,
+    description text,
+    course      text
+);
+
+create table tee_times(
     tee_time_id   integer primary key,
     time          integer,
     course_name   text,
-    golfer        text default "",
+    golfer        integer default "",
     start_time    string default "",
     end_time      string default "",
     available     tinyint default 1,
@@ -16,11 +24,23 @@ create table tee_times (
     updated_at    timestamp
 );
 
-create table golfers (
+create table golfers(
     golfer_id      integer primary key,
     name           text,
     avg_round_time integer default 0,
     total_rounds   integer default 0,
+    current_round  integer default 0,
+    added_at       datetime,
+    updated_at     datetime
+);
+
+create table rounds(
+    round_id       integer primary key, 
+    golfer         text default "",
+    course_id      integer default 0,
+    active         integer default 0,
+    tee_location   integer,
+    tee_shot       integer,
     added_at       datetime,
     updated_at     datetime
 );

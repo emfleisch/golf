@@ -16,10 +16,10 @@ def setup_db():
         print("Creating schema for {} using \'create_schema.sh\'".format(db_filename))
         with open('create_schema', 'rt') as f:
             schema = f.read()
+        print(schema)     
         conn.executescript(schema)
     else:
         print("Database {} exists".format(db_filename))
-
     conn.close()
 
 def get_time():
@@ -56,13 +56,17 @@ def get_all_tee_times(course_name):
 
 def get_active_rounds(user, id):
     # Get active rounds for a user
-    cmd = 'select time from tee_times where golfer = "{}" and start_time != "" and end_time = ""'.format(id)
+    cmd = 'select tee_time_id from tee_times where {} = "{}" and start_time != "" and end_time = ""'.format(user, id)
     return(read_from_db(cmd))
 
 
 def reserve_tee_time(golfer, course_name, time):
     cmd = 'UPDATE tee_times SET available=0, golfer="{}", start_time="{}" WHERE course_name="{}" and time = {}'.format(golfer, get_time(), course_name, time)
-    return(write_to_db(cmd))
+    write_to_db(cmd)
+
+    course_id = read_from_db('select course_id from courses where name = "{}"'.format(course_name))
+    cmd2 = "insert into rounds (golfer, course_id) values ('{}','{}')".format(golfer, course_id[0])
+    return(write_to_db(cmd2))
 
 
 def end_tee_time(golfer):
@@ -133,6 +137,29 @@ def get_golfer(golfer_id, col='name'):
         return True
     else:
         return False
+
+def add_tee_shot(golfer_id, ball_location):
+    #Only tracking opening hole tee shot
+    round_id = get_active_rounds("golfer", golfer_id)
+    if len(round_id) > 1:
+        print("Found more than 1 active round for {}".format(golfer_id))
+        return False
+    if round_id:
+        cmd = "UPDATE rounds SET tee_shot = {} where round_id = {}".format(ball_location, round_id[0])
+        write_to_db(cmd)
+        return True
+    else:
+        print("{} is not currently in a round".format(golfer_id))
+        return False
+
+def get_tee_shots(course_id):
+    # get all teeshots from 1st hole on course
+    #cmd = "select time from tee_times left outer join courses on course_name = courses.name where courses.name = \"{}\" and available = 1".format(course_name)
+    #cmd = "select tee_shot from rounds left outer join courses on course_id = courses.course_id where courses.course_id = {}".format(course_id)
+
+    cmd = "select tee_shot from rounds WHERE course_id = {}".format(course_id)
+    res = read_from_db(cmd)
+    return res
 
 
 def write_to_db(cmd):
